@@ -1,0 +1,44 @@
+$ modinfo ext4 | grep filename
+filename:       /lib/modules/7.2.15+kali-amd64/updates/ext4.ko
+
+$ python3 -I ext4_best_avail_repro.py
+kernel 7.2.15+kali-amd64, 4 CPUs
+free-space map (blocks left unfilled before punching: 0):
+  group   free  frags   avg  free-extent orders present
+    0   13775    16    860  2^0x1,2^1x1,2^2x1,2^3x1,2^6x1,2^7x1,2^8x1,2^10x13
+    1   15360    15   1024  2^10x15
+    2   15360    15   1024  2^10x15
+    3   15360    15   1024  2^10x15
+    4   15360    15   1024  2^10x15
+    5   15360    15   1024  2^10x15
+    6   15360    15   1024  2^10x15
+    7   15360    15   1024  2^10x15
+    8    7680    30    256  2^8x30
+    9   15616    61    256  2^8x61
+   10   15872    62    256  2^8x62
+   11   15616    61    256  2^8x61
+   12   15872    62    256  2^8x62
+   13   15616    61    256  2^8x61
+   14   15872    62    256  2^8x62
+   15   15872    62    256  2^8x62
+
+[A control: goal in group 0, no linear prescan] global goal for victim = group 0, mb_max_linear_groups=0
+   allocator calls: 8   allocation sizes: {1024: 8}   file extents: 8
+
+[B bug: goal in group 8, no linear prescan  ] global goal for victim = group 8, mb_max_linear_groups=0
+   allocator calls: 8   allocation sizes: {1024: 8}   file extents: 8
+
+[C bug: goal in group 0, default prescan=4  ] global goal for victim = group 0, mb_max_linear_groups=4
+   allocator calls: 8   allocation sizes: {1024: 8}   file extents: 8
+
+SUMMARY (same free space, same writes, 32 MiB file):
+  A: 8 allocator calls, 8 extents
+  B: 8 allocator calls, 8 extents  (1.0x calls)
+  C: 8 allocator calls, 8 extents  (1.0x calls)
+
+$ python3 -I ext4_best_avail_minorder_repro.py
+kernel 7.2.15+kali-amd64; all groups hold only 512-block free chunks
+[511-block writes] 12 allocations, criteria: {'CR_BEST_AVAIL_LEN': 9, 'CR_POWER2_ALIGNED': 3}
+    mb_stats: best_avail hits=9 groups_considered=18; goal_slow hits=0 groups_considered=0
+[512-block writes] 12 allocations, criteria: {'CR_BEST_AVAIL_LEN': 9, 'CR_POWER2_ALIGNED': 3}
+    mb_stats: best_avail hits=9 groups_considered=18; goal_slow hits=0 groups_considered=0
